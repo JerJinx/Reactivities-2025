@@ -1,24 +1,42 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Reactivities.Application.Features.Activities.Command;
+using Reactivities.Application.Features.Activities.Queries;
 using Reactivities.Domain.Entities;
-using Reactivities.Infrastructure.Persistence;
 
 namespace Reactivities.API.Controllers;
 
-public class ActivitiesController(AppDbContext context) : BaseApiController
+public class ActivitiesController : BaseApiController
 {
     [HttpGet]
-    public async Task<ActionResult<List<Activity>>> GetActivities()
+    public async Task<ActionResult<List<Activity>>> GetAll([FromQuery] GetAllActivitiesQuery query)
     {
-        return await context.Activities.ToListAsync();
+        return await Mediator.Send(query);
     }
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Activity>> GetActivityDetail(string id)
-    {
-        var activity = await context.Activities.FindAsync(id);
 
-        if (activity == null) return NotFound();
-        
+    [HttpGet("{id}")]
+    public async Task<ActionResult<Activity>> GetById(string id)
+    {
+        var activity = await Mediator.Send(new GetActivityByIdQuery(id));
         return activity;
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<string>> CreateActivity(Activity activity)
+    {
+        return await Mediator.Send(new CreateActivityCommand { Activity = activity });
+    }
+
+    [HttpPut]
+    public async Task<ActionResult> UpdateActiviy(Activity activity)
+    {
+        await Mediator.Send(new UpdateActivityCommand { Activity = activity });
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> DeleteActivity(string id)
+    {
+        await Mediator.Send(new DeleteActivityCommand(id));
+        return Ok();
     }
 }
