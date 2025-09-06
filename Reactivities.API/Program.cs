@@ -3,6 +3,7 @@ using Reactivities.Infrastructure.Extensions;
 using Reactivities.Application.Extensions;
 using Reactivities.Infrastructure.Persistence;
 using Reactivities.Infrastructure.Seeder;
+using Reactivities.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,11 +12,12 @@ builder.Services.AddControllers();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
 builder.Services.AddCors();
+builder.Services.AddTransient<ExceptionMiddleware>();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().WithOrigins("http://localhost:3000", "https://localhost:3000"));
 
 app.MapControllers();

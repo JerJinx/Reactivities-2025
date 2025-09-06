@@ -1,22 +1,37 @@
+using AutoMapper;
+using FluentValidation;
 using MediatR;
+using Reactivities.Application.Common;
+using Reactivities.Application.Features.Activities.DTOs;
 using Reactivities.Domain.Entities;
 using Reactivities.Infrastructure.Persistence;
 
 namespace Reactivities.Application.Features.Activities.Command;
 
-public class CreateActivityCommand : IRequest<string>
+public class CreateActivityCommand : IRequest<Result<string>>
 {
-    public required Activity Activity { get; set; }
+    public required CreateActivityDto ActivityDto { get; set; }
 }
 
-public class CreateActivityCommandHandler(AppDbContext context) : IRequestHandler<CreateActivityCommand, string>
+public class CreateActivityCommandHandler(AppDbContext context, IMapper mapper) : IRequestHandler<CreateActivityCommand, Result<string>>
 {
-    public async Task<string> Handle(CreateActivityCommand request, CancellationToken cancellationToken)
+    public async Task<Result<string>> Handle(CreateActivityCommand request, CancellationToken cancellationToken)
     {
-        context.Activities.Add(request.Activity);
+        var activity = mapper.Map<Activity>(request.ActivityDto);
 
-        await context.SaveChangesAsync(cancellationToken);
+        context.Activities.Add(activity);
 
-        return request.Activity.Id;
+        var result = await context.SaveChangesAsync(cancellationToken) > 0;
+
+        if (!result) return Result<string>.Failure("Failed to create the activity", 400);
+
+        return Result<string>.Success(activity.Id);
+    }
+}
+
+public class CreateActivityValidator : BaseActivityValidator<CreateActivityCommand, CreateActivityDto>
+{
+    public CreateActivityValidator() : base(x => x.ActivityDto)
+    {
     }
 }

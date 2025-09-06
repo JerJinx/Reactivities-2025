@@ -1,22 +1,23 @@
 using MediatR;
+using Reactivities.Application.Common;
 using Reactivities.Domain.Entities;
 using Reactivities.Infrastructure.Persistence;
 
 namespace Reactivities.Application.Features.Activities.Queries;
 
-public class GetActivityByIdQuery(string id) : IRequest<Activity>
+public class GetActivityByIdQuery(string id) : IRequest<Result<Activity>>
 {
     public string Id { get; set; } = id;
 }
 
-public class GetActivityQueryHandler(AppDbContext context) : IRequestHandler<GetActivityByIdQuery, Activity>
+public class GetActivityQueryHandler(AppDbContext context) : IRequestHandler<GetActivityByIdQuery, Result<Activity>>
 {
-    public async Task<Activity> Handle(GetActivityByIdQuery request, CancellationToken cancellationToken)
+    public async Task<Result<Activity>> Handle(GetActivityByIdQuery request, CancellationToken cancellationToken)
     {
             var activity = await context.Activities.FindAsync([request.Id], cancellationToken);
 
-            if (activity == null) throw new Exception("Activity not found.");
+            if (activity == null) return Result<Activity>.Failure("Activity not found", 404);
 
-            return activity;
+            return Result<Activity>.Success(activity);
     }
 }
